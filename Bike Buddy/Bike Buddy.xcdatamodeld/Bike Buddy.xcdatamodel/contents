@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model name="" userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="2061" systemVersion="12E55" minimumToolsVersion="Xcode 4.3" macOSVersion="Automatic" iOSVersion="Automatic">
+    <entity name="Ride" representedClassName="Ride" syncable="YES">
+        <attribute name="averageSpeed" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="fastestSpeed" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="map" optional="YES" attributeType="Binary" syncable="YES"/>
+        <attribute name="recordDate" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="startDate" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="stopDate" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="totalDistance" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="totalPauseTime" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="totalRideTime" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="Ride" positionX="160" positionY="192" width="128" height="180"/>
+    </elements>
+</model>
