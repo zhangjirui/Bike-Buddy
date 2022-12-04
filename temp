@@ -1,0 +1,119 @@
+先上结论:
+优先使用CDN 存储图片，App运行时从CDN获取图片；
+使用assets进行图片管理，使用svg格式；
+使用assets进行图片管理，使用PNG格式；
+
+为什么使用SVG格式？  
+主要原因是矢量图能提升效率。  
+设计师不需要将SVG转换为3种PNG图片；  
+研发在Assets中也只需要添加一张SVG即可，无需添加三种图片。
+
+Assets中的图片，不需要使用无损工具压缩  
+对图片进行无损压缩，并不会改变最终生成的Assets.car的体积。  
+原因是：  
+添加到Assets中的图片，Xcode 会通过自己的压缩算法重新对图片进行处理。在构建 Assets Catalogs 的编译产物 Assest.car 的过程中，Xcode 会使用 actool 对 Assets Catalogs 中的 png 图片进行解码，由此得到 Bitmap 数据，然后再运用 actool 的编码压缩算法进行编码压缩处理。所以不改变编码方式的无损压缩方法最终的包大小来说，没有什么作用。
+
+进行验证：
+通过工具imageOptim中的无损压缩功能，将三张图片进行无损压缩。
+
+|图片| 原始体积 | Assets.car |
+| --- | --- | --- |
+| elephant_png | 10,604,467 | 9758456 |
+| elephant_png@2x | 42,740,368 | 28709129 |
+| elephant_png@3x | 84,928,285 | 55589210 |
+| elephant_png_imageOptim_lossless | 10,599,358 | 9758456 |
+| elephant_png_imageOptim_lossless@2x | 30,619,028 | 28709129 |
+| elephant_png_imageOptim_lossless@3x | 58,907,690 | 55589210 |
+
+从列表数据可发现，是否进行无损压缩，最终在Assets.car中size相同。
+
+使用PDF/SVG替换PNG，是否能减少size？  
+Assets.car 中使用矢量图，如果不勾选Perserve vector data，Xcode在build时会将矢量图转换成3种PNG图片。那么，Xcode自动转换的PNG图片 和 我们用设计工具（Sketch）生成的PNG图片，哪种size更小呢？  
+答案是，没有规律可循，有时Xcode自动转换的PNG图片 更小，有时反之。  
+进行验证：
+选取11张pdf矢量图，11张svg矢量图，将这22张矢量图先使用Sketch生成1x/2x/3x png图片。
+然后将所有矢量图和 PNG图片放入assets中，执行xcode archive，然后观察assets.car 中size。
+
+|矢量图	|1x/2x/3x	|size	|	|矢量图转换后的PNG图片	|1x/2x/3x	|size	|	|矢量图size - PNG size|
+|---	|---	|---	|---	|---	|---	|---	|---	|---|
+|pdf-0.pdf	|1	|26213	|	|pdf-png-0.png	|1	|26516	|	|-303|
+|pdf-0.pdf	|2	|60672	|	|pdf-png-0@2x.png	|2	|59481	|	|1191|
+|pdf-0.pdf	|3	|91493	|	|pdf-png-0@3x.png	|3	|88770	|	|2723|
+|pdf-1.pdf	|1	|341621	|	|pdf-png-1.png	|1	|248596	|	|93025|
+|pdf-1.pdf	|2	|1153449	|	|pdf-png-1@2x.png	|2	|833552	|	|319897|
+|pdf-1.pdf	|3	|2222257	|	|pdf-png-1@3x.png	|3	|1684785	|	|537472|
+|pdf-2.pdf	|1	|77602	|	|pdf-png-2.png	|1	|77626	|	|-24|
+|pdf-2.pdf	|2	|162010	|	|pdf-png-2@2x.png	|2	|160053	|	|1957|
+|pdf-2.pdf	|3	|241911	|	|pdf-png-2@3x.png	|3	|238822	|	|3089|
+|pdf-3.pdf	|1	|25065	|	|pdf-png-3.png	|1	|24915	|	|150|
+|pdf-3.pdf	|2	|54488	|	|pdf-png-3@2x.png	|2	|54331	|	|157|
+|pdf-3.pdf	|3	|85114	|	|pdf-png-3@3x.png	|3	|84868	|	|246|
+|pdf-4.pdf	|1	|334	|	|pdf-png-4.png	|1	|334	|	|0|
+|pdf-4.pdf	|2	|334	|	|pdf-png-4@2x.png	|2	|334	|	|0|
+|pdf-4.pdf	|3	|334	|	|pdf-png-4@3x.png	|3	|334	|	|0|
+|pdf-5.pdf	|1	|330	|	|pdf-png-5.png	|1	|330	|	|0|
+|pdf-5.pdf	|2	|330	|	|pdf-png-5@2x.png	|2	|330	|	|0|
+|pdf-5.pdf	|3	|330	|	|pdf-png-5@3x.png	|3	|330	|	|0|
+|pdf-6.pdf	|1	|5149	|	|pdf-png-6.png	|1	|5149	|	|0|
+|pdf-6.pdf	|2	|28430	|	|pdf-png-6@2x.png	|2	|7575	|	|20855|
+|pdf-6.pdf	|3	|52787	|	|pdf-png-6@3x.png	|3	|9534	|	|43253|
+|pdf-7.pdf	|1	|2711	|	|pdf-png-7.png	|1	|2839	|	|-128|
+|pdf-7.pdf	|2	|5733	|	|pdf-png-7@2x.png	|2	|6816	|	|-1083|
+|pdf-7.pdf	|3	|8825	|	|pdf-png-7@3x.png	|3	|8642	|	|183|
+|pdf-8.pdf	|1	|6876	|	|pdf-png-8.png	|1	|6872	|	|4|
+|pdf-8.pdf	|2	|13780	|	|pdf-png-8@2x.png	|2	|13780	|	|0|
+|pdf-8.pdf	|3	|21916	|	|pdf-png-8@3x.png	|3	|21933	|	|-17|
+|pdf-9.pdf	|1	|330	|	|pdf-png-9.png	|1	|334	|	|-4|
+|pdf-9.pdf	|2	|3383	|	|pdf-png-9@2x.png	|2	|3374	|	|9|
+|pdf-9.pdf	|3	|5058	|	|pdf-png-9@3x.png	|3	|5066	|	|-8|
+|pdf-10.pdf	|1	|334	|	|pdf-png-10.png	|1	|334	|	|0|
+|pdf-10.pdf	|2	|334	|	|pdf-png-10@2x.png	|2	|334	|	|0|
+|pdf-10.pdf	|3	|334	|	|pdf-png-10@3x.png	|3	|334	|	|0|
+|svg-0.svg	|1	|48004	|	|svg-png-0.png	|1	|47951	|	|53|
+|svg-0.svg	|2	|130814	|	|svg-png-0@2x.png	|2	|130614	|	|200|
+|svg-0.svg	|3	|240530	|	|svg-png-0@3x.png	|3	|239916	|	|614|
+|svg-1.svg	|1	|617814	|	|svg-png-1.png	|1	|670493	|	|-52679|
+|svg-1.svg	|2	|1226249	|	|svg-png-1@2x.png	|2	|1321268	|	|-95019|
+|svg-1.svg	|3	|1817027	|	|svg-png-1@3x.png	|3	|1993283	|	|-176256|
+|svg-2.svg	|1	|72376	|	|svg-png-2.png	|1	|21387	|	|50989|
+|svg-2.svg	|2	|151432	|	|svg-png-2@2x.png	|2	|49457	|	|101975|
+|svg-2.svg	|3	|235843	|	|svg-png-2@3x.png	|3	|76656	|	|159187|
+|svg-3.svg	|1	|59919	|	|svg-png-3.png	|1	|60014	|	|-95|
+|svg-3.svg	|2	|131254	|	|svg-png-3@2x.png	|2	|131169	|	|85|
+|svg-3.svg	|3	|209885	|	|svg-png-3@3x.png	|3	|210661	|	|-776|
+|svg-4.svg	|1	|59961	|	|svg-png-4.png	|1	|59955	|	|6|
+|svg-4.svg	|2	|133368	|	|svg-png-4@2x.png	|2	|133005	|	|363|
+|svg-4.svg	|3	|214318	|	|svg-png-4@3x.png	|3	|214346	|	|-28|
+|svg-5.svg	|1	|35508	|	|svg-png-5.png	|1	|35446	|	|62|
+|svg-5.svg	|2	|76422	|	|svg-png-5@2x.png	|2	|76199	|	|223|
+|svg-5.svg	|3	|120715	|	|svg-png-5@3x.png	|3	|120836	|	|-121|
+|svg-6.svg	|1	|43973	|	|svg-png-6.png	|1	|43753	|	|220|
+|svg-6.svg	|2	|97885	|	|svg-png-6@2x.png	|2	|98078	|	|-193|
+|svg-6.svg	|3	|156089	|	|svg-png-6@3x.png	|3	|156199	|	|-110|
+|svg-7.svg	|1	|35686	|	|svg-png-7.png	|1	|35739	|	|-53|
+|svg-7.svg	|2	|76979	|	|svg-png-7@2x.png	|2	|76945	|	|34|
+|svg-7.svg	|3	|117561	|	|svg-png-7@3x.png	|3	|117943	|	|-382|
+|svg-8.svg	|1	|24283	|	|svg-png-8.png	|1	|24218	|	|65|
+|svg-8.svg	|2	|51595	|	|svg-png-8@2x.png	|2	|51903	|	|-308|
+|svg-8.svg	|3	|79980	|	|svg-png-8@3x.png	|3	|80115	|	|-135|
+|svg-9.svg	|1	|23786	|	|svg-png-9.png	|1	|6798	|	|16988|
+|svg-9.svg	|2	|52033	|	|svg-png-9@2x.png	|2	|15842	|	|36191|
+|svg-9.svg	|3	|81961	|	|svg-png-9@3x.png	|3	|25330	|	|56631|
+|svg-10.svg	|1	|28675	|	|svg-png-10.png	|1	|28659	|	|16|
+|svg-10.svg	|2	|64867	|	|svg-png-10@2x.png	|2	|64874	|	|-7|
+|svg-10.svg	|3	|102643	|	|svg-png-10@3x.png	|3	|102665	|	|-22|
+
+从最后一列差值看出，有些情况下，使用矢量图对最终size有优势，有时使用png更有优势。
+
+使用矢量图，什么时候勾选 Perserve vector data
+默认不勾选，xcode在编译时会自动将矢量图转换为PNG图片
+如果勾选，那么xcode在编译时也会执行png的转换，同时会将原始矢量图打包进assets.car中。
+使用场景：希望将一张矢量图用于多种size场景时。
+
+
+尽量使用assets管理图片  
+因为如果有3张图片@1x @2x @3x，最终下发到设备中时，只有下发一张。而如果直接将三张图片放置到项目中，那么这三张都会下发。增加了app size。
+
+
+
+
